@@ -1,5 +1,5 @@
-#   Template-SDK, by-EAjks.Com C++ Development Best Practices
-#   Copyright (c) 2022-2024 Andrea and Eric DELAGE <Contact@by-EAjks.Com>
+#   SDK Template, by-EAjks.Com C++ Development Best Practices
+#   Copyright (c) 2026 Andrea and Eric DELAGE <Contact@by-EAjks.Com>
 #
 #   This program is free software: you can redistribute it and/or modify
 #   it under the terms of the GNU General Public License as published by
@@ -14,16 +14,21 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-name: CI
+name: Default
+
 on:
-  push:
-    branches:
-      - main
   pull_request:
     branches:
-      - main
+      - 'main'
+  push:
+    branches:
+      - 'main'
+    tags:
+      - 'v\d+.\d+.\d+'
+
 env:
   BUILD_TYPE: Release
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -32,6 +37,9 @@ jobs:
       volumes:
         - ${{github.workspace}}:/src
     steps:
+      # https://github.com/actions/checkout/tags
+      - name: Checkout the Git repository
+        uses: actions/checkout@v6
       - name: Install some required packages
         run: |
           apt update
@@ -40,11 +48,6 @@ jobs:
               git-lfs
           apt-get autoremove --yes --purge
           rm -rf /var/lib/apt/lists/*
-      - name: Checkout the Git repository
-        uses: actions/checkout@v4.1.7
-        with:
-          submodules: true
-        # https://github.com/actions/checkout/tags
       - name: Install some required packages
         run: |
           apt update
@@ -77,8 +80,8 @@ jobs:
             -D BUILD_API_DOCUMENTATION=ON \
             /src/Code
           ninja package
+      # https://github.com/actions/upload-artifact/tags
       - name: Archive the generated debian package
         uses: actions/upload-artifact@v4.3.4
         with:
           path: /build/Template-SDK_1.2.0.deb
-        # https://github.com/actions/upload-artifact/tags

@@ -1,6 +1,6 @@
 @echo off
-::  Template-SDK, by-EAjks.Com C++ Development Best Practices
-::  Copyright (c) 2022-2024 Andrea and Eric DELAGE <Contact@by-EAjks.Com>
+::  SDK Template, by-EAjks.Com C++ Development Best Practices
+::  Copyright (c) 2026 Andrea and Eric DELAGE <Contact@by-EAjks.Com>
 ::
 ::  This program is free software: you can redistribute it and/or modify
 ::  it under the terms of the GNU General Public License as published by

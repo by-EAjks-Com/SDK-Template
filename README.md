@@ -1,11 +1,11 @@
-[![CI](https://github.com/by-EAjks-Com/Template-SDK/actions/workflows/ci.yml/badge.svg)](https://github.com/by-EAjks-Com/Template-SDK/actions/workflows/ci.yml)
+[![CI](https://github.com/by-EAjks-Com/SDK-Template/actions/workflows/ci.yml/badge.svg)](https://github.com/by-EAjks-Com/Template-SDK/actions/workflows/ci.yml)
 
-# Template SDK, C++ Development Best Practices @ by-EAjks.Com
+# SDK Template, C++ Development Best Practices @ by-EAjks.Com
 
-## Building, Testing, and Deploying the Template-SDK Container Image
+## Building, Testing, and Deploying the SDK-Template Container Image
 
 ```powershell
-cd /Path/To/Template-SDK
+cd /Path/To/SDK-Template
 ```
 
 ### Prerequisites
@@ -28,14 +28,14 @@ docker run \
     --interactive \
     --tty \
     --gpus all \
-    --name template-sdk \
-    --volume '/Path/To/Template-SDK:/src' \
+    --name sdk-template \
+    --volume '/Path/To/SDK-Template:/src' \
     --workdir /build \
     docker.io/eajkseajks/cpp-cuda:1.0.0-sdk-core-ubuntu-24.04
 ```
 
 ```powershell
-docker start --interactive template-sdk
+docker start --interactive sdk-template
 ```
 
 #### On a Windows Host
@@ -45,14 +45,14 @@ docker run `
     --interactive `
     --tty `
     --gpus all `
-    --name template-sdk `
-    --volume '/Path/To/Template-SDK:/src' `
+    --name sdk-template `
+    --volume '/Path/To/SDK-Template:/src' `
     --workdir /build `
     docker.io/eajkseajks/cpp-cuda:1.0.0-sdk-core-ubuntu-24.04
 ```
 
 ```powershell
-docker start --interactive template-sdk
+docker start --interactive sdk-template
 ```
 
 #### In the Linux Guest
@@ -150,9 +150,9 @@ ninja package
 ##### Testing
 
 ```bash
-apt install ./Template-SDK_1.2.3.4.deb
+apt install ./SDK-Template_1.2.3.4.deb
 
-export PATH=/opt/by-EAjks.Com/Template-SDK/bin${PATH:+:${PATH}}
+export PATH=/opt/by-EAjks.Com/SDK-Template/bin${PATH:+:${PATH}}
 
 Benchmark -vvv
 Demonstration -vvv
@@ -170,9 +170,9 @@ docker build \
     --build-arg RUNTIME_IMAGE_NAME=cpp-cuda \
     --build-arg RUNTIME_IMAGE_TAG=1.0.0-runtime-core-ubuntu-24.04 \
     --build-arg TEMPLATE_SDK_VERSION=1.2.3.4 \
-    --file DevOps/Docker/Template-SDK/Dockerfile \
-    --tag ghcr.io/by-eajks-com/template-sdk:v1.2.3.4 \
-    --tag ghcr.io/by-eajks-com/template-sdk:latest \
+    --file DevOps/Docker/SDK-Template/Dockerfile \
+    --tag ghcr.io/by-eajks-com/sdk-template:v1.2.3.4 \
+    --tag ghcr.io/by-eajks-com/sdk-template:latest \
     .
 ```
 
@@ -186,8 +186,8 @@ docker build `
     --build-arg RUNTIME_IMAGE_NAME=cpp-cuda `
     --build-arg RUNTIME_IMAGE_TAG=1.0.0-runtime-core-ubuntu-24.04 `
     --build-arg TEMPLATE_SDK_VERSION=1.2.3.4 `
-    --file DevOps/Docker/Template-SDK/Dockerfile `
-    --tag ghcr.io/by-eajks-com/template-sdk:v1.2.3.4 `
-    --tag ghcr.io/by-eajks-com/template-sdk:latest `
+    --file DevOps/Docker/SDK-Template/Dockerfile `
+    --tag ghcr.io/by-eajks-com/sdk-template:v1.2.3.4 `
+    --tag ghcr.io/by-eajks-com/sdk-template:latest `
     .
 ```
