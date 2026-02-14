@@ -43,6 +43,18 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
+      # https://github.com/reviewdog/action-setup/tags
+      - name: Set up reviewdog
+        uses: reviewdog/action-setup@v1
+        with:
+          reviewdog_version: latest
+      # https://github.com/reviewdog/action-cpp-linter/tags
+      - name: Run clang-tidy with reviewdog
+        uses: reviewdog/action-cpp-linter@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          reviewdog_flags: -fail-level=warning
+          cppcheck_flags: --enable=all --suppress=missingIncludeSystem
     # # https://github.com/aquasecurity/setup-trivy/tags
     # - name: Set up Trivy manually
     #   uses: aquasecurity/setup-trivy@v0.2.5
