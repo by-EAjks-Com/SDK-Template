@@ -102,11 +102,11 @@ jobs:
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
           cmake \
-            -G "Ninja" \
+            -G "Unix Makefiles" \
             -D CMAKE_C_COMPILER=icx \
-            -D CMAKE_C_COMPILER_AR=xiar \
+            -D CMAKE_C_COMPILER_AR=llvm-ar \
             -D CMAKE_CXX_COMPILER=icpx \
-            -D CMAKE_CXX_COMPILER_AR=xiar \
+            -D CMAKE_CXX_COMPILER_AR=llvm-ar \
             -D CMAKE_UNITY_BUILD=OFF \
             -D CMAKE_BUILD_TYPE=Release \
             -D CMAKE_LINKER_TYPE=DEFAULT \
@@ -115,7 +115,7 @@ jobs:
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
             /src/Code
-          ninja package
+          infer run -- make -j package
       # https://github.com/actions/upload-artifact/tags
       - name: Archive the generated debian package
         uses: actions/upload-artifact@v4.3.4
