@@ -40,12 +40,9 @@ jobs:
       # https://github.com/actions/checkout/tags
       - name: Checkout the Git repository
         uses: actions/checkout@v6
-      # https://github.com/aquasecurity/trivy-action/tags
+      # https://github.com/aquasecurity/setup-trivy/tags
       - name: Set up Trivy manually
-        uses: aquasecurity/setup-trivy@v0.2.0
-        with:
-          version: master
-          cache: true
+        uses: aquasecurity/setup-trivy@master
       # https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
