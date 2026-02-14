@@ -79,33 +79,20 @@ jobs:
         run: |
           apt update
           apt install --yes --no-install-recommends \
-              git \
-              git-lfs
-          apt-get autoremove --yes --purge
-          rm -rf /var/lib/apt/lists/*
-
-
-
-
-
-      - name: Install some required packages
-        run: |
-          apt update
-          apt install --yes --no-install-recommends \
               wget \
-              libpython3.12-dev \
-              python3.12
+              libpython3.14-dev \
+              python3.14
           apt-get autoremove --yes --purge
           rm -rf /var/lib/apt/lists/*
       - name: Install a specific CMake version
         run: |
           mkdir /tools && cd /tools
-          wget -c https://github.com/Kitware/CMake/releases/download/v3.30.2/cmake-3.30.2-linux-x86_64.tar.gz -O - | tar -xz
+          wget -c https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-linux-x86_64.tar.gz -O - | tar -xz
       - name: Setup and build the CMake project
         run: |
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
-          /tools/cmake-3.30.2-linux-x86_64/bin/cmake \
+          /tools/cmake-4.2.3-linux-x86_64/bin/cmake \
             -G "Ninja" \
             -D CMAKE_C_COMPILER=icx \
             -D CMAKE_C_COMPILER_AR=xiar \
