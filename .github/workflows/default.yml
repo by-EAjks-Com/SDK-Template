@@ -44,7 +44,7 @@ jobs:
       - name: Set up Trivy manually
         uses: aquasecurity/setup-trivy@v0.2.5
         with:
-          version: v0.69.1
+          version: v0.68.2
       # https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
