@@ -42,11 +42,8 @@ jobs:
         uses: actions/checkout@v6
       # https://github.com/aquasecurity/setup-trivy/tags
       - name: Set up Trivy manually
-        uses: aquasecurity/setup-trivy@v0.2.5
-        with:
-          version: v0.69.1
-          cache: true
-      # https://github.com/aquasecurity/trivy-action/tags
+        uses: aquasecurity/setup-trivy@v0.2.4
+s      # https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.34.0
         with:
