@@ -94,19 +94,13 @@ jobs:
       - name: Install some required packages
         run: |
           apt update
-          apt install --yes --no-install-recommends \
-              wget \
-              infer \
-              libpython3.14-dev \
-              python3.14
-          apt-get autoremove --yes --purge
-          rm -rf /var/lib/apt/lists/*
-                # https://github.com/reviewdog/action-setup/tags
+          apt install --yes libpython3.14-dev
+          apt install --yes python3.14
       - name: Setup and build the CMake project
         run: |
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
-          /tools/cmake-4.2.3-linux-x86_64/bin/cmake \
+          cmake \
             -G "Ninja" \
             -D CMAKE_C_COMPILER=icx \
             -D CMAKE_C_COMPILER_AR=xiar \
