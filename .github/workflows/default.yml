@@ -84,13 +84,13 @@ jobs:
           apt update
           apt install --yes wget
           wget -c https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-linux-x86_64.tar.gz -O - | tar -C /opt -xz
-          ln -s /tools/cmake-4.2.3-linux-x86_64/bin/cmake /usr/local/bin/cmake
+          ln -s /opt/cmake-4.2.3-linux-x86_64/bin/cmake /usr/local/bin/cmake
       - name: Set up Infer
         run: |
           apt update
           apt install --yes wget
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
-          ln -s /opt/infer-linux64-v1.2.0/bin/infer /usr/local/bin/infer
+          ln -s /opt/infer-linux-x86_64-v1.2.0/bin/infe /usr/local/bin/infer
       - name: Install some required packages
         run: |
           apt update
@@ -99,7 +99,6 @@ jobs:
           apt install --yes libpython3.13-dev
       - name: Set up and build the project
         run: |
-          export PATH=/usr/local/bin${PATH:+:${PATH}}
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
           cmake \
