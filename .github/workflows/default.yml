@@ -45,7 +45,7 @@ jobs:
         uses: aquasecurity/setup-trivy@master
       # https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@v0.2.5
         with:
           skip-setup-trivy: true
           scan-type: repository
