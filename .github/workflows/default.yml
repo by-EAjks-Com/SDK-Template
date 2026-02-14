@@ -32,10 +32,10 @@ env:
 jobs:
   build:
     runs-on: ubuntu-latest
-    #container:
-    #  image: docker.io/eajkseajks/cpp-cuda:1.0.0-sdk-core-ubuntu-24.04
-    #  volumes:
-    #    - ${{github.workspace}}:/src
+    container:
+      image: docker.io/eajkseajks/intel-oneapi-nvidia-cuda:v1-sdk-core
+      volumes:
+        - ${{github.workspace}}:/src
     steps:
       # https://github.com/actions/checkout/tags
       - name: Checkout the Git repository
