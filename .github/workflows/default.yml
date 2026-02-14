@@ -90,7 +90,7 @@ jobs:
           apt update
           apt install --yes wget
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
-          ln -s /opt/infer-linux-x86_64-v1.2.0/bin/infe /usr/local/bin/infer
+          ln -s /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
       - name: Install some required packages
         run: |
           apt update
