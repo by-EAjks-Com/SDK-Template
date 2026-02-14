@@ -94,9 +94,10 @@ jobs:
       - name: Install some required packages
         run: |
           apt update
-          apt install --yes libpython3.14-dev
           apt install --yes python3.14
-      - name: Setup and build the CMake project
+          apt install --yes python3.14-dev
+          apt install --yes libpython3.14-dev
+      - name: Set up and build the project
         run: |
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
