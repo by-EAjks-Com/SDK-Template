@@ -48,7 +48,7 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           skip-setup-trivy: true
-          scan-type: frepositorys
+          scan-type: repository
           severity: CRITICAL,HIGH,MEDIUM
           format: sarif
           output: trivy-results.sarif
