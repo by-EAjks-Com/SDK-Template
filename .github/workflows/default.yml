@@ -99,6 +99,9 @@ jobs:
           apt install --yes libpython3.13-dev
       - name: Set up and build the project
         run: |
+          export PATH=/usr/local/bin${PATH:+:${PATH}}
+          cmake --version
+          infer --version
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
           cmake \
