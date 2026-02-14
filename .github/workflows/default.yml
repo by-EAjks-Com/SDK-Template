@@ -48,13 +48,15 @@ jobs:
         uses: reviewdog/action-setup@v1
         with:
           reviewdog_version: latest
-      # https://github.com/reviewdog/action-cpp-linter/tags
+      # Install and run clang-tidy with reviewdog
       - name: Run clang-tidy with reviewdog
-        uses: reviewdog/action-cpp-linter@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          reviewdog_flags: -fail-level=warning
-          cppcheck_flags: --enable=all --suppress=missingIncludeSystem
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          apt update
+          apt install --yes --no-install-recommends clang-tools
+          cd /src
+          find Code -name "*.cpp" -o -name "*.h" | xargs clang-tidy -p build 2>&1 | reviewdog -f=clang-tidy -reporter=github-pr-review -fail-level=warning
     # # https://github.com/aquasecurity/setup-trivy/tags
     # - name: Set up Trivy manually
     #   uses: aquasecurity/setup-trivy@v0.2.5

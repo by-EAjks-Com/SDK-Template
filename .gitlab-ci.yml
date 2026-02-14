@@ -13,3 +13,67 @@
 #
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
+stages:
+  - lint
+  - build
+
+variables:
+  BUILD_TYPE: Release
+
+lint:clang-tidy:
+  stage: lint
+  image: docker.io/eajkseajks/intel-oneapi-nvidia-cuda:v1-sdk-core
+  script:
+    # Install reviewdog
+    - mkdir -p /tools && cd /tools
+    - wget -q https://github.com/reviewdog/reviewdog/releases/download/v0.23.4/reviewdog_linux_amd64.deb
+    - dpkg -i reviewdog_linux_amd64.deb
+    # Install clang-tidy
+    - apt update
+    - apt install --yes --no-install-recommends clang-tools
+    # Run clang-tidy and pipe through reviewdog for GitLab MR discussions
+    - cd /src
+    - find Code -name "*.cpp" -o -name "*.h" | xargs clang-tidy -p build --fix-errors 2>&1 | reviewdog -f=clang-tidy -reporter=gitlab-mr-discussion -filter-mode=diff_context
+  allow_failure: true
+  only:
+    - merge_requests
+
+build:
+  stage: build
+  image: docker.io/eajkseajks/intel-oneapi-nvidia-cuda:v1-sdk-core
+  script:
+    - apt update
+    - apt install --yes --no-install-recommends \
+        wget \
+        libpython3.14-dev \
+        python3.14
+    - apt-get autoremove --yes --purge
+    - rm -rf /var/lib/apt/lists/*
+    # Install CMake
+    - mkdir /tools && cd /tools
+    - wget -c https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-linux-x86_64.tar.gz -O - | tar -xz
+    # Build
+    - mkdir /build && cd /build
+    - . /opt/intel/oneapi/setvars.sh
+    - /tools/cmake-4.2.3-linux-x86_64/bin/cmake \
+        -G "Ninja" \
+        -D CMAKE_C_COMPILER=icx \
+        -D CMAKE_C_COMPILER_AR=xiar \
+        -D CMAKE_CXX_COMPILER=icpx \
+        -D CMAKE_CXX_COMPILER_AR=xiar \
+        -D CMAKE_UNITY_BUILD=OFF \
+        -D CMAKE_BUILD_TYPE=Release \
+        -D CMAKE_LINKER_TYPE=DEFAULT \
+        -D PYBIND11_FINDPYTHON=ON \
+        -D TEMPLATE_SDK_VERSION=1.2.0 \
+        -D USE_PRECOMPILED_HEADERS=OFF \
+        -D BUILD_API_DOCUMENTATION=ON \
+        /src/Code
+    - ninja package
+  artifacts:
+    paths:
+      - /build/Template-SDK_1.2.0.deb
+    expire_in: 1 week
+  only:
+    - main
+    - tags
