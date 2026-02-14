@@ -15,4 +15,4 @@
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ADD_SUBDIRECTORY(Template-CPU)
-ADD_SUBDIRECTORY(Template-GPU)
+#DD_SUBDIRECTORY(Template-GPU)

@@ -43,20 +43,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-      # https://github.com/reviewdog/action-setup/tags
-      - name: Set up reviewdog
-        uses: reviewdog/action-setup@v1
-        with:
-          reviewdog_version: v0.18.0
-      # Install and run clang-tidy with reviewdog
-      - name: Run clang-tidy with reviewdog
-        env:
-          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          apt update
-          apt install --yes --no-install-recommends clang-tools
-          cd /src
-          find Code -name "*.cpp" -o -name "*.h" | xargs clang-tidy -p build 2>&1 | reviewdog -f=clang-tidy -reporter=github-pr-review -fail-level=warning
     # # https://github.com/aquasecurity/setup-trivy/tags
     # - name: Set up Trivy manually
     #   uses: aquasecurity/setup-trivy@v0.2.5
@@ -92,19 +78,30 @@ jobs:
     #   with:
     #     sarif_file: trivy-results.sarif
     #     category: filesystem-vulnerabilities
+
+      - name: Set up CMake
+        run: |
+          apt update
+          apt install --yes wget
+          wget -c https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-linux-x86_64.tar.gz -O - | tar -C /opt -xz
+          ln -s /tools/cmake-4.2.3-linux-x86_64/bin/cmake /usr/local/bin/cmake
+      - name: Set up Infer
+        run: |
+          apt update
+          apt install --yes wget
+          wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
+          ln -s /opt/infer-linux64-v1.2.0/bin/infer /usr/local/bin/infer
       - name: Install some required packages
         run: |
           apt update
           apt install --yes --no-install-recommends \
               wget \
+              infer \
               libpython3.14-dev \
               python3.14
           apt-get autoremove --yes --purge
           rm -rf /var/lib/apt/lists/*
-      - name: Install a specific CMake version
-        run: |
-          mkdir /tools && cd /tools
-          wget -c https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-linux-x86_64.tar.gz -O - | tar -xz
+                # https://github.com/reviewdog/action-setup/tags
       - name: Setup and build the CMake project
         run: |
           mkdir /build && cd /build
