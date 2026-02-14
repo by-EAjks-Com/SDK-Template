@@ -33,7 +33,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: docker.io/eajkseajks/intel-oneapi-nvidia-cuda:v1-sdk-core
+      image: docker.io/eajkseajks/intel-oneapi:v1-sdk-core
       volumes:
         - ${{github.workspace}}:/src
     steps:
