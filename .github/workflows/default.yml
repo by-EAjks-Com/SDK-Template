@@ -43,7 +43,7 @@ jobs:
       # https://github.com/aquasecurity/setup-trivy/tags
       - name: Set up Trivy manually
         uses: aquasecurity/setup-trivy@v0.2.4
-s      # https://github.com/aquasecurity/trivy-action/tags
+      # https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@0.34.0
         with:
