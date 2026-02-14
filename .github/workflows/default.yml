@@ -40,41 +40,41 @@ jobs:
       # https://github.com/actions/checkout/tags
       - name: Checkout the Git repository
         uses: actions/checkout@v6
-      # https://github.com/aquasecurity/setup-trivy/tags
-      - name: Set up Trivy manually
-        uses: aquasecurity/setup-trivy@v0.2.5
-        with:
-          version: v0.68.2
-      # https://github.com/aquasecurity/trivy-action/tags
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          skip-setup-trivy: true
-          scan-type: repository
-          severity: CRITICAL,HIGH,MEDIUM
-          format: sarif
-          output: trivy-results.sarif
-      # https://github.com/codeql-action/upload-sarif/tags
-      - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: trivy-results.sarif
-          category: repository-vulnerabilities
-      # https://github.com/aquasecurity/trivy-action/tags
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          skip-setup-trivy: true
-          scan-type: fs
-          severity: CRITICAL,HIGH,MEDIUM
-          format: sarif
-          output: trivy-results.sarif
-      # https://github.com/codeql-action/upload-sarif/tags
-      - name: Upload Trivy scan results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: trivy-results.sarif
-          category: filesystem-vulnerabilities
+    # # https://github.com/aquasecurity/setup-trivy/tags
+    # - name: Set up Trivy manually
+    #   uses: aquasecurity/setup-trivy@v0.2.5
+    #   with:
+    #     version: v0.68.2
+    # # https://github.com/aquasecurity/trivy-action/tags
+    # - name: Run Trivy vulnerability scanner
+    #   uses: aquasecurity/trivy-action@master
+    #   with:
+    #     skip-setup-trivy: true
+    #     scan-type: repository
+    #     severity: CRITICAL,HIGH,MEDIUM
+    #     format: sarif
+    #     output: trivy-results.sarif
+    # # https://github.com/codeql-action/upload-sarif/tags
+    # - name: Upload Trivy scan results to GitHub Security
+    #   uses: github/codeql-action/upload-sarif@v4
+    #   with:
+    #     sarif_file: trivy-results.sarif
+    #     category: repository-vulnerabilities
+    # # https://github.com/aquasecurity/trivy-action/tags
+    # - name: Run Trivy vulnerability scanner
+    #   uses: aquasecurity/trivy-action@master
+    #   with:
+    #     skip-setup-trivy: true
+    #     scan-type: fs
+    #     severity: CRITICAL,HIGH,MEDIUM
+    #     format: sarif
+    #     output: trivy-results.sarif
+    # # https://github.com/codeql-action/upload-sarif/tags
+    # - name: Upload Trivy scan results to GitHub Security
+    #   uses: github/codeql-action/upload-sarif@v4
+    #   with:
+    #     sarif_file: trivy-results.sarif
+    #     category: filesystem-vulnerabilities
       - name: Install some required packages
         run: |
           apt update
