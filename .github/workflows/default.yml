@@ -100,12 +100,11 @@ jobs:
       - name: Set up and build the project
         run: |
           export PATH=/usr/local/bin${PATH:+:${PATH}}
-          cmake --version
-          infer --version
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
           cmake \
-            -G "Unix Makefiles" \
+            -G "Ninja" \
+            -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
             -D CMAKE_C_COMPILER=icx \
             -D CMAKE_C_COMPILER_AR=llvm-ar \
             -D CMAKE_CXX_COMPILER=icpx \
@@ -118,9 +117,10 @@ jobs:
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
             /src/Code
-          infer run -- make -j package
+          infer capture --compilation-database compile_commands.json
+          ninja package
       # https://github.com/actions/upload-artifact/tags
       - name: Archive the generated debian package
-        uses: actions/upload-artifact@v4.3.4
+        uses: actions/upload-artifact@v6
         with:
           path: /build/Template-SDK_1.2.0.deb
