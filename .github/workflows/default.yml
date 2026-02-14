@@ -41,13 +41,16 @@ jobs:
       - name: Checkout the Git repository
         uses: actions/checkout@v6
       # https://github.com/aquasecurity/setup-trivy/tags
-      # name: Set up Trivy manually
-      # uses: aquasecurity/setup-trivy@v0.2.5
+      - name: Set up Trivy manually
+        uses: aquasecurity/setup-trivy@v0.2.5
+        with:
+          version: 0.69.1
+          cache: true
       # https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.0
         with:
-        # skip-setup-trivy: true
+          skip-setup-trivy: true
           scan-type: repository
           severity: CRITICAL,HIGH,MEDIUM
           format: sarif
@@ -60,9 +63,9 @@ jobs:
           category: repository-vulnerabilities
       # https://github.com/aquasecurity/trivy-action/tags
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
+        uses: aquasecurity/trivy-action@0.34.0
         with:
-        # skip-setup-trivy: true
+          skip-setup-trivy: true
           scan-type: fs
           severity: CRITICAL,HIGH,MEDIUM
           format: sarif
