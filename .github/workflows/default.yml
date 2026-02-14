@@ -100,11 +100,30 @@ jobs:
       - name: Set up and build the project
         run: |
           export PATH=/usr/local/bin${PATH:+:${PATH}}
-          mkdir /build && cd /build
+          mkdir /build-infer && cd /build-infer
           . /opt/intel/oneapi/setvars.sh
           cmake \
-            -G "Ninja" \
-            -D CMAKE_EXPORT_COMPILE_COMMANDS=ON \
+            -G "Unix Makefiles" \
+            -D CMAKE_C_COMPILER=clang \
+            -D CMAKE_C_COMPILER_AR=llvm-ar \
+            -D CMAKE_CXX_COMPILER=clang++ \
+            -D CMAKE_CXX_COMPILER_AR=llvm-ar \
+            -D CMAKE_UNITY_BUILD=OFF \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_LINKER_TYPE=DEFAULT \
+            -D PYBIND11_FINDPYTHON=ON \
+            -D TEMPLATE_SDK_VERSION=1.2.0 \
+            -D USE_PRECOMPILED_HEADERS=OFF \
+            -D BUILD_API_DOCUMENTATION=ON \
+            /src/Code
+          infer run -- make -j$(nproc)
+      - name: Set up and build the project
+        run: |
+          export PATH=/usr/local/bin${PATH:+:${PATH}}
+          mkdir /build-package && cd /build-package
+          . /opt/intel/oneapi/setvars.sh
+          cmake \
+            -G "Unix Makefiles" \
             -D CMAKE_C_COMPILER=icx \
             -D CMAKE_C_COMPILER_AR=llvm-ar \
             -D CMAKE_CXX_COMPILER=icpx \
@@ -117,10 +136,10 @@ jobs:
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
             /src/Code
-          infer capture --compilation-database compile_commands.json
-          ninja package
+          make -j$(nproc)
+          make package
       # https://github.com/actions/upload-artifact/tags
       - name: Archive the generated debian package
         uses: actions/upload-artifact@v6
         with:
-          path: /build/Template-SDK_1.2.0.deb
+          path: /build-package/Template-SDK_1.2.0.deb
