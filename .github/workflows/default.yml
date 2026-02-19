@@ -30,29 +30,22 @@ on:
     tags:
       - 'v\d+.\d+.\d+'
 
-# Global environment variables
 env:
   BUILD_TYPE: Release
   TEMPLATE_SDK_VERSION: '1.2.0'
 
 jobs:
-  # Primary build job: static analysis, compilation, and packaging
   build:
     runs-on: ubuntu-latest
     container:
       image: docker.io/eajkseajks/intel-oneapi-nvidia-cuda:v1-sdk-core
-      volumes:
-        - ${{github.workspace}}:/src
     steps:
-      # ========================================
-      # Step 1: Checkout repository and dependencies
-      # ========================================
       # https://github.com/actions/checkout/tags
       - name: Checkout the Git repository
         uses: actions/checkout@v6
         with:
           submodules: recursive
-          fetch-depth: 0  # Full history for versioning
+          fetch-depth: 0
     # ========================================
     # Step 2: Security scanning (disabled - uncomment if needed)
     # ========================================
@@ -86,47 +79,29 @@ jobs:
     #   uses: github/codeql-action/upload-sarif@v4
     #   with:
     #     sarif_file: trivy-results-*.sarif
-
-      # ========================================
-      # Step 3: Prepare build environment
-      # ========================================
-      # Install essential build tools and dependencies
-      - name: Prepare build environment
+      - name: Install essential build tools and dependencies
         run: |
           apt update
           apt install --yes \
             wget \
+            xz-utils \
             python3.13 \
             python3.13-dev \
             libpython3.13-dev
-
-      # ========================================
-      # Step 4: Install CMake
-      # ========================================
       - name: Install CMake v4.2.3
         run: |
           wget -c https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-linux-x86_64.tar.gz -O - | tar -C /opt -xz
-          ln -s /opt/cmake-4.2.3-linux-x86_64/bin/cmake /usr/local/bin/cmake
-
-      # ========================================
-      # Step 5: Install Infer (static analysis)
-      # ========================================
+          ln -fs /opt/cmake-4.2.3-linux-x86_64/bin/cmake /usr/local/bin/cmake
       - name: Install Infer v1.2.0
         run: |
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
-          ln -s /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
+          ln -fs /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
 
-      # ========================================
-      # Step 6: Static code analysis with Infer
-      # ========================================
-      # Runs Infer static analyzer to detect potential bugs, memory leaks, and code issues
-      # Outputs results in JSON format
       - name: Analyze code with Infer
         if: always()
         run: |
-          mkdir -p /build-infer && cd /build-infer
+          mkdir /build-infer && cd /build-infer
           . /opt/intel/oneapi/setvars.sh
-          export PATH=/usr/local/bin:${PATH}
           cmake \
             -G "Unix Makefiles" \
             -D CMAKE_C_COMPILER=clang \
@@ -134,64 +109,44 @@ jobs:
             -D CMAKE_CXX_COMPILER=clang++ \
             -D CMAKE_CXX_COMPILER_AR=llvm-ar \
             -D CMAKE_UNITY_BUILD=OFF \
-            -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+            -D CMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
             -D CMAKE_LINKER_TYPE=DEFAULT \
             -D PYBIND11_FINDPYTHON=ON \
-            -D TEMPLATE_SDK_VERSION=${TEMPLATE_SDK_VERSION} \
+            -D TEMPLATE_SDK_VERSION=${{env.TEMPLATE_SDK_VERSION}} \
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
-            /src/Code
-          infer run --json-report=/build-infer/report.json -- make -j$(nproc)
-
-      # ========================================
-      # Step 6b: Post Infer results with reviewdog
-      # ========================================
-      # Posts inline comments on pull requests with detected issues
-      # https://github.com/reviewdog/action-reviewdog/tags
+            ${{github.workspace}}/Code
+          infer run --sarif -- make -j$(nproc)
+          cp infer-out/report.sarif ${{github.workspace}}/infer-report.sarif
       - name: Comment Infer findings with reviewdog
         if: always() && github.event_name == 'pull_request'
         uses: reviewdog/action-reviewdog@v1
         with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
           tool_name: Infer
           reporter: github-pr-review
-          sarif_file: /build-infer/report.json
-
-
-
-      # ========================================
-      # Step 7: Build project and create package
-      # ========================================
-      # Builds the project using Intel compilers (oneAPI)
-      # Generates Debian package for distribution
+          file: ${{github.workspace}}/infer-report.sarif
+          format: sarif
       - name: Build project with Intel oneAPI compilers
         run: |
-          mkdir -p /build-package && cd /build-package
-          # Source Intel oneAPI environment
+          mkdir /build-package && cd /build-package
           . /opt/intel/oneapi/setvars.sh
-          export PATH=/usr/local/bin:${PATH}
-          # Configure with Intel compilers for optimized production build
           cmake \
             -G "Unix Makefiles" \
-            -D CMAKE_C_COMPILER=icx \
+            -D CMAKE_C_COMPILER=clang \
             -D CMAKE_C_COMPILER_AR=llvm-ar \
-            -D CMAKE_CXX_COMPILER=icpx \
+            -D CMAKE_CXX_COMPILER=clang++ \
             -D CMAKE_CXX_COMPILER_AR=llvm-ar \
             -D CMAKE_UNITY_BUILD=OFF \
-            -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+            -D CMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
             -D CMAKE_LINKER_TYPE=DEFAULT \
             -D PYBIND11_FINDPYTHON=ON \
-            -D TEMPLATE_SDK_VERSION=${TEMPLATE_SDK_VERSION} \
+            -D TEMPLATE_SDK_VERSION=${{env.TEMPLATE_SDK_VERSION}} \
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
-            /src/Code
-          # Build and package
+            ${{github.workspace}}/Code
           make -j$(nproc)
           make package
-
-      # ========================================
-      # Step 8: Upload build artifacts
-      # ========================================
-      # Archive the generated Debian package for distribution
       # https://github.com/actions/upload-artifact/tags
       - name: Archive the generated Debian package
         uses: actions/upload-artifact@v6
