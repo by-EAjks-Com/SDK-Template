@@ -49,35 +49,29 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-    # ========================================
-    # Step 2: Security scanning (disabled - uncomment if needed)
-    # ========================================
-    # Security vulnerability scanning with Trivy
-    # These steps can be enabled for repository and filesystem scanning
     # # https://github.com/aquasecurity/setup-trivy/tags
     # - name: Set up Trivy
     #   uses: aquasecurity/setup-trivy@v0.2.5
     #   with:
     #     version: v0.68.2
-    #
+    # # https://github.com/aquasecurity/trivy-action/tags
     # - name: Scan repository for vulnerabilities
-    #   uses: aquasecurity/trivy-action@master
+    #   uses: aquasecurity/trivy-action@0.34.0
     #   with:
     #     skip-setup-trivy: true
     #     scan-type: repository
     #     severity: CRITICAL,HIGH,MEDIUM
     #     format: sarif
     #     output: trivy-results-repo.sarif
-    #
+    # # https://github.com/aquasecurity/trivy-action/tags
     # - name: Scan filesystem for vulnerabilities
-    #   uses: aquasecurity/trivy-action@master
+    #   uses: aquasecurity/trivy-action@0.34.0
     #   with:
     #     skip-setup-trivy: true
     #     scan-type: fs
     #     severity: CRITICAL,HIGH,MEDIUM
     #     format: sarif
     #     output: trivy-results-fs.sarif
-    #
     # - name: Upload security scan results
     #   uses: github/codeql-action/upload-sarif@v4
     #   with:
@@ -129,8 +123,6 @@ jobs:
           sarif_file: /build-infer.results/report.sarif
       - name: Build the project with Intel oneAPI compilers
         run: |
-          export PATH=/usr/local/bin${PATH:+:${PATH}}
-          mkdir /build-package && cd /build-package
           . /opt/intel/oneapi/setvars.sh
           cmake \
             -G "Unix Makefiles" \
