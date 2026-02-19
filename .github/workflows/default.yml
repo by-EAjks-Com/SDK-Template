@@ -123,6 +123,9 @@ jobs:
             --compilation-database /build-infer/compile_commands.json \
             --results-dir /build-infer.results \
             --sarif
+          ls /
+          ls /build-infer
+          ls /build-infer.results
       - name: Upload security scan results
         uses: github/codeql-action/upload-sarif@v4
         with:
