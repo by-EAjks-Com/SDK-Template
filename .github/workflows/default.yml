@@ -49,33 +49,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-    # # https://github.com/aquasecurity/setup-trivy/tags
-    # - name: Set up Trivy
-    #   uses: aquasecurity/setup-trivy@v0.2.5
-    #   with:
-    #     version: v0.68.2
-    # # https://github.com/aquasecurity/trivy-action/tags
-    # - name: Scan repository for vulnerabilities
-    #   uses: aquasecurity/trivy-action@0.34.0
-    #   with:
-    #     skip-setup-trivy: true
-    #     scan-type: repository
-    #     severity: CRITICAL,HIGH,MEDIUM
-    #     format: sarif
-    #     output: trivy-results-repo.sarif
-    # # https://github.com/aquasecurity/trivy-action/tags
-    # - name: Scan filesystem for vulnerabilities
-    #   uses: aquasecurity/trivy-action@0.34.0
-    #   with:
-    #     skip-setup-trivy: true
-    #     scan-type: fs
-    #     severity: CRITICAL,HIGH,MEDIUM
-    #     format: sarif
-    #     output: trivy-results-fs.sarif
-    # - name: Upload security scan results
-    #   uses: github/codeql-action/upload-sarif@v4
-    #   with:
-    #     sarif_file: trivy-results-*.sarif
       - name: Install essential build tools and dependencies
         run: |
           apt update
@@ -97,7 +70,8 @@ jobs:
         run: |
           git diff \
             --name-only \
-            ${{github.event.pull_request.head.sha}}..${{github.event.pull_request.base.sha}} \
+            ${{github.event.pull_request.base.sha}} \
+            ${{github.event.pull_request.head.sha}} \
             > /build-infer.changed-files-index
       - name: Checkout head branch
         run: |
