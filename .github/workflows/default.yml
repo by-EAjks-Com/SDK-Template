@@ -109,47 +109,52 @@ jobs:
           ln -s /opt/cmake-4.2.3-linux-x86_64/bin/cmake /usr/local/bin/cmake
 
       # ========================================
+      # Step 5: Install Infer (static analysis)
+      # ========================================
+      - name: Install Infer v1.2.0
+        run: |
+          wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
+          ln -s /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
+
+      # ========================================
       # Step 6: Static code analysis with Infer
       # ========================================
       # Runs Infer static analyzer to detect potential bugs, memory leaks, and code issues
-      # Results are output in SARIF format for reviewdog integration
-      - name: Analyze code with Infer and post results
+      # Outputs results in JSON format
+      - name: Analyze code with Infer
         if: always()
-        uses: jreese/infer-action@v1
-        with:
-          build-command: |
-            . /opt/intel/oneapi/setvars.sh
-            export PATH=/usr/local/bin:${PATH}
-            cmake \
-              -G "Unix Makefiles" \
-              -D CMAKE_C_COMPILER=clang \
-              -D CMAKE_C_COMPILER_AR=llvm-ar \
-              -D CMAKE_CXX_COMPILER=clang++ \
-              -D CMAKE_CXX_COMPILER_AR=llvm-ar \
-              -D CMAKE_UNITY_BUILD=OFF \
-              -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
-              -D CMAKE_LINKER_TYPE=DEFAULT \
-              -D PYBIND11_FINDPYTHON=ON \
-              -D TEMPLATE_SDK_VERSION=${TEMPLATE_SDK_VERSION} \
-              -D USE_PRECOMPILED_HEADERS=OFF \
-              -D BUILD_API_DOCUMENTATION=ON \
-              /src/Code
-            make -j$(nproc)
-          result-format: sarif
+        run: |
+          mkdir -p /build-infer && cd /build-infer
+          . /opt/intel/oneapi/setvars.sh
+          export PATH=/usr/local/bin:${PATH}
+          cmake \
+            -G "Unix Makefiles" \
+            -D CMAKE_C_COMPILER=clang \
+            -D CMAKE_C_COMPILER_AR=llvm-ar \
+            -D CMAKE_CXX_COMPILER=clang++ \
+            -D CMAKE_CXX_COMPILER_AR=llvm-ar \
+            -D CMAKE_UNITY_BUILD=OFF \
+            -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+            -D CMAKE_LINKER_TYPE=DEFAULT \
+            -D PYBIND11_FINDPYTHON=ON \
+            -D TEMPLATE_SDK_VERSION=${TEMPLATE_SDK_VERSION} \
+            -D USE_PRECOMPILED_HEADERS=OFF \
+            -D BUILD_API_DOCUMENTATION=ON \
+            /src/Code
+          infer run --json-report=/build-infer/report.json -- make -j$(nproc)
 
       # ========================================
       # Step 6b: Post Infer results with reviewdog
       # ========================================
       # Posts inline comments on pull requests with detected issues
       # https://github.com/reviewdog/action-reviewdog/tags
-      - name: Comment Infer findings on PR with reviewdog
+      - name: Comment Infer findings with reviewdog
         if: always() && github.event_name == 'pull_request'
         uses: reviewdog/action-reviewdog@v1
         with:
           tool_name: Infer
           reporter: github-pr-review
-          sarif_file: sarif.json
-          fail_on_error: false
+          sarif_file: /build-infer/report.json
 
 
 
