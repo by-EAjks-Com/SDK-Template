@@ -119,9 +119,14 @@ jobs:
             -D BUILD_API_DOCUMENTATION=ON \
             -S ./Code \
             -B /build-infer
-          infer --compilation-database /build-infer/compile_commands.json
-          find . -name *.sarif
-          find /build-infer -name *.sarif
+          infer \
+            --compilation-database /build-infer/compile_commands.json \
+            --results-dir /build-infer.results \
+            --sarif
+      - name: Build the project with Intel oneAPI compilers
+        run: |
+          find . -name *.sarif -print
+          find /build-infer -name *.sarif -print
       - name: Upload security scan results
         uses: github/codeql-action/upload-sarif@v4
         with:
