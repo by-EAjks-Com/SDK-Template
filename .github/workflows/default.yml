@@ -66,6 +66,11 @@ jobs:
         run: |
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
           ln -fs /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
+      - name: Mark repository as safe
+        run:
+          git config \
+            --global \
+            --add safe.directory $(pwd)
       - name: Fetch PR commits explicitly
         run: |
           git fetch \
