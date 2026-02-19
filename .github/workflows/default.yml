@@ -84,7 +84,6 @@ jobs:
           apt update
           apt install --yes \
             wget \
-            xz-utils \
             python3.13 \
             python3.13-dev \
             libpython3.13-dev
@@ -96,11 +95,10 @@ jobs:
         run: |
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
           ln -fs /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
-
-      - name: Analyze code with Infer
+      - name: Build project with Intel oneAPI compilers
         if: always()
         run: |
-          mkdir /build-infer && cd /build-infer
+          mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
           cmake \
             -G "Unix Makefiles" \
@@ -116,35 +114,10 @@ jobs:
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
             ${{github.workspace}}/Code
-          infer run --sarif -- make -j$(nproc)
-          cp infer-out/report.sarif ${{github.workspace}}/infer-report.sarif
-      - name: Comment Infer findings with reviewdog
-        if: always() && github.event_name == 'pull_request'
-        uses: reviewdog/action-reviewdog@v1
-        with:
-          github_token: ${{secrets.GITHUB_TOKEN}}
-          tool_name: Infer
-          reporter: github-pr-review
-          file: ${{github.workspace}}/infer-report.sarif
-          format: sarif
-      - name: Build project with Intel oneAPI compilers
-        run: |
-          mkdir /build-package && cd /build-package
-          . /opt/intel/oneapi/setvars.sh
-          cmake \
-            -G "Unix Makefiles" \
-            -D CMAKE_C_COMPILER=clang \
-            -D CMAKE_C_COMPILER_AR=llvm-ar \
-            -D CMAKE_CXX_COMPILER=clang++ \
-            -D CMAKE_CXX_COMPILER_AR=llvm-ar \
-            -D CMAKE_UNITY_BUILD=OFF \
-            -D CMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
-            -D CMAKE_LINKER_TYPE=DEFAULT \
-            -D PYBIND11_FINDPYTHON=ON \
-            -D TEMPLATE_SDK_VERSION=${{env.TEMPLATE_SDK_VERSION}} \
-            -D USE_PRECOMPILED_HEADERS=OFF \
-            -D BUILD_API_DOCUMENTATION=ON \
-            ${{github.workspace}}/Code
+          infer run \
+            --sarif \
+            --results-dir ./infer-out \
+            -- \
           make -j$(nproc)
           make package
       # https://github.com/actions/upload-artifact/tags
@@ -152,5 +125,9 @@ jobs:
         uses: actions/upload-artifact@v6
         with:
           name: sdk-package
-          path: /build-package/Template-SDK_*.deb
+          path: /build/Template-SDK_*.deb
           retention-days: 7
+      - name: Upload security scan results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: /build/infer-out/report.sarif
