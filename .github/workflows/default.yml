@@ -66,6 +66,12 @@ jobs:
         run: |
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
           ln -fs /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
+      - name: Fetch PR commits explicitly
+        run: |
+          git fetch \
+            origin \
+            ${{ github.event.pull_request.base.sha }} \
+            ${{ github.event.pull_request.head.sha }}
       - name: Generate changed files index
         run: |
           git diff \
