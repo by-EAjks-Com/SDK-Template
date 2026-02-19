@@ -87,6 +87,7 @@ jobs:
           apt update
           apt install --yes \
             wget \
+            xz-utils \
             python3.13 \
             python3.13-dev \
             libpython3.13-dev
@@ -98,12 +99,13 @@ jobs:
         run: |
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
           ln -fs /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
-      - name: Build project with Intel oneAPI compilers
+      - name: Analyze code with Infer
         if: always()
         run: |
           . /opt/intel/oneapi/setvars.sh
           cmake \
             -G "Unix Makefiles" \
+            -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
             -D CMAKE_C_COMPILER=clang \
             -D CMAKE_C_COMPILER_AR=llvm-ar \
             -D CMAKE_CXX_COMPILER=clang++ \
@@ -116,13 +118,34 @@ jobs:
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
             -S ./Code \
-            -B /build
-          infer run \
-            --sarif \
-            --results-dir ./infer-out \
-            -- \
-          make -j$(nproc)
-          make package
+            -B /build-infer
+          infer --compilation-database /build-infer/compile_commands.json
+      - name: Upload security scan results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: /build-infer/infer-out/report.sarif
+      - name: Build the project with Intel oneAPI compilers
+        run: |
+          export PATH=/usr/local/bin${PATH:+:${PATH}}
+          mkdir /build-package && cd /build-package
+          . /opt/intel/oneapi/setvars.sh
+          cmake \
+            -G "Unix Makefiles" \
+            -D CMAKE_C_COMPILER=icx \
+            -D CMAKE_C_COMPILER_AR=llvm-ar \
+            -D CMAKE_CXX_COMPILER=icpx \
+            -D CMAKE_CXX_COMPILER_AR=llvm-ar \
+            -D CMAKE_UNITY_BUILD=OFF \
+            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_LINKER_TYPE=DEFAULT \
+            -D PYBIND11_FINDPYTHON=ON \
+            -D TEMPLATE_SDK_VERSION=1.2.0 \
+            -D USE_PRECOMPILED_HEADERS=OFF \
+            -D BUILD_API_DOCUMENTATION=ON \
+            -S ./Code \
+            -B /build-package
+          make -C /build-package -j$(nproc)
+          make -C /build-package package
       # https://github.com/actions/upload-artifact/tags
       - name: Archive the generated Debian package
         uses: actions/upload-artifact@v6
@@ -130,7 +153,3 @@ jobs:
           name: sdk-package
           path: /build/Template-SDK_*.deb
           retention-days: 7
-      - name: Upload security scan results
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: /build/infer-out/report.sarif
