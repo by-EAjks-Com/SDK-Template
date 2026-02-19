@@ -123,14 +123,10 @@ jobs:
             --compilation-database /build-infer/compile_commands.json \
             --results-dir /build-infer.results \
             --sarif
-      - name: Build the project with Intel oneAPI compilers
-        run: |
-          find . -name *.sarif -print
-          find /build-infer -name *.sarif -print
       - name: Upload security scan results
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: /build-infer/infer-out/report.sarif
+          sarif_file: /build-infer.results/*.sarif
       - name: Build the project with Intel oneAPI compilers
         run: |
           export PATH=/usr/local/bin${PATH:+:${PATH}}
