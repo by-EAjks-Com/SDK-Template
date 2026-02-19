@@ -101,6 +101,7 @@ jobs:
       - name: Build project with Intel oneAPI compilers
         if: always()
         run: |
+          echo $(pwd)
           mkdir /build && cd /build
           . /opt/intel/oneapi/setvars.sh
           cmake \
@@ -116,7 +117,7 @@ jobs:
             -D TEMPLATE_SDK_VERSION=${{env.TEMPLATE_SDK_VERSION}} \
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
-            ${{github.workspace}}/Code
+            ./Code
           infer run \
             --sarif \
             --results-dir ./infer-out \
