@@ -49,33 +49,6 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 0
-    # # https://github.com/aquasecurity/setup-trivy/tags
-    # - name: Set up Trivy
-    #   uses: aquasecurity/setup-trivy@v0.2.5
-    #   with:
-    #     version: v0.68.2
-    # # https://github.com/aquasecurity/trivy-action/tags
-    # - name: Scan repository for vulnerabilities
-    #   uses: aquasecurity/trivy-action@0.34.0
-    #   with:
-    #     skip-setup-trivy: true
-    #     scan-type: repository
-    #     severity: CRITICAL,HIGH,MEDIUM
-    #     format: sarif
-    #     output: trivy-results-repo.sarif
-    # # https://github.com/aquasecurity/trivy-action/tags
-    # - name: Scan filesystem for vulnerabilities
-    #   uses: aquasecurity/trivy-action@0.34.0
-    #   with:
-    #     skip-setup-trivy: true
-    #     scan-type: fs
-    #     severity: CRITICAL,HIGH,MEDIUM
-    #     format: sarif
-    #     output: trivy-results-fs.sarif
-    # - name: Upload security scan results
-    #   uses: github/codeql-action/upload-sarif@v4
-    #   with:
-    #     sarif_file: trivy-results-*.sarif
       - name: Install essential build tools and dependencies
         run: |
           apt update
@@ -93,8 +66,28 @@ jobs:
         run: |
           wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
           ln -fs /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
+      - name: Mark repository as safe
+        run:
+          git config \
+            --global \
+            --add safe.directory $(pwd)
+      - name: Fetch PR commits explicitly
+        run: |
+          git fetch \
+            origin \
+            ${{ github.event.pull_request.base.sha }} \
+            ${{ github.event.pull_request.head.sha }}
+      - name: Generate changed files index
+        run: |
+          git diff \
+            --name-only \
+            ${{github.event.pull_request.base.sha}} \
+            ${{github.event.pull_request.head.sha}} \
+            > /build-infer.changed-files-index
+      - name: Checkout head branch
+        run: |
+          git checkout ${{github.event.pull_request.head.sha}}
       - name: Analyze code with Infer
-        if: always()
         run: |
           . /opt/intel/oneapi/setvars.sh
           cmake \
@@ -112,15 +105,59 @@ jobs:
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
             -S ./Code \
-            -B /build-infer
-          infer \
-            --compilation-database /build-infer/compile_commands.json \
-            --results-dir /build-infer.results \
+            -B /build-infer-head
+          infer capture \
+            --compilation-database /build-infer-head/compile_commands.json \
+            --results-dir /build-infer-head.results
+          infer analyze \
+            --changed-files-index /build-infer.changed-files-index \
+            --results-dir /build-infer-head.results \
             --sarif
       - name: Upload security scan results
         uses: github/codeql-action/upload-sarif@v4
         with:
-          sarif_file: /build-infer.results/report.sarif
+          sarif_file: /build-infer-base.results/report.sarif
+      - name: Checkout base branch
+        run: |
+          git checkout ${{github.event.pull_request.base.sha}}
+      - name: Analyze code with Infer
+        run: |
+          . /opt/intel/oneapi/setvars.sh
+          cmake \
+            -G "Unix Makefiles" \
+            -D CMAKE_EXPORT_COMPILE_COMMANDS=1 \
+            -D CMAKE_C_COMPILER=clang \
+            -D CMAKE_C_COMPILER_AR=llvm-ar \
+            -D CMAKE_CXX_COMPILER=clang++ \
+            -D CMAKE_CXX_COMPILER_AR=llvm-ar \
+            -D CMAKE_UNITY_BUILD=OFF \
+            -D CMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} \
+            -D CMAKE_LINKER_TYPE=DEFAULT \
+            -D PYBIND11_FINDPYTHON=ON \
+            -D TEMPLATE_SDK_VERSION=${{env.TEMPLATE_SDK_VERSION}} \
+            -D USE_PRECOMPILED_HEADERS=OFF \
+            -D BUILD_API_DOCUMENTATION=ON \
+            -S ./Code \
+            -B /build-infer-base
+          infer capture \
+            --reactive \
+            --mark-if-unchanged \
+            --compilation-database /build-infer-base/compile_commands.json \
+            --results-dir /build-infer-base.results
+          infer analyze \
+            --incremental-analysis \
+            --changed-files-index /build-infer.changed-files-index \
+            --results-dir /build-infer-base.results \
+            --sarif
+      - name: Upload security scan results
+        uses: github/codeql-action/upload-sarif@v4
+        with:
+          sarif_file: /build-infer-base.results/report.sarif
+      - name: Compare Infer results and generate report
+        run: |
+          infer reportdiff \
+            --report-current  /build-infer-head.results/report.json \
+            --report-previous /build-infer-base.results/report.json \
       - name: Build the project with Intel oneAPI compilers
         run: |
           . /opt/intel/oneapi/setvars.sh
