@@ -14,8 +14,12 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
-name: Default
+name: Default CI/CD Pipeline
 
+# Trigger workflow on:
+# - Pull requests targeting main branch
+# - Pushes to main branch
+# - Semantic version tags (e.g., v1.0.0)
 on:
   pull_request:
     branches:
@@ -26,10 +30,13 @@ on:
     tags:
       - 'v\d+.\d+.\d+'
 
+# Global environment variables
 env:
   BUILD_TYPE: Release
+  TEMPLATE_SDK_VERSION: '1.2.0'
 
 jobs:
+  # Primary build job: static analysis, compilation, and packaging
   build:
     runs-on: ubuntu-latest
     container:
@@ -37,91 +44,127 @@ jobs:
       volumes:
         - ${{github.workspace}}:/src
     steps:
+      # ========================================
+      # Step 1: Checkout repository and dependencies
+      # ========================================
       # https://github.com/actions/checkout/tags
       - name: Checkout the Git repository
         uses: actions/checkout@v6
         with:
           submodules: recursive
-          fetch-depth: 0
+          fetch-depth: 0  # Full history for versioning
+    # ========================================
+    # Step 2: Security scanning (disabled - uncomment if needed)
+    # ========================================
+    # Security vulnerability scanning with Trivy
+    # These steps can be enabled for repository and filesystem scanning
     # # https://github.com/aquasecurity/setup-trivy/tags
-    # - name: Set up Trivy manually
+    # - name: Set up Trivy
     #   uses: aquasecurity/setup-trivy@v0.2.5
     #   with:
     #     version: v0.68.2
-    # # https://github.com/aquasecurity/trivy-action/tags
-    # - name: Run Trivy vulnerability scanner
+    #
+    # - name: Scan repository for vulnerabilities
     #   uses: aquasecurity/trivy-action@master
     #   with:
     #     skip-setup-trivy: true
     #     scan-type: repository
     #     severity: CRITICAL,HIGH,MEDIUM
     #     format: sarif
-    #     output: trivy-results.sarif
-    # # https://github.com/codeql-action/upload-sarif/tags
-    # - name: Upload Trivy scan results to GitHub Security
-    #   uses: github/codeql-action/upload-sarif@v4
-    #   with:
-    #     sarif_file: trivy-results.sarif
-    #     category: repository-vulnerabilities
-    # # https://github.com/aquasecurity/trivy-action/tags
-    # - name: Run Trivy vulnerability scanner
+    #     output: trivy-results-repo.sarif
+    #
+    # - name: Scan filesystem for vulnerabilities
     #   uses: aquasecurity/trivy-action@master
     #   with:
     #     skip-setup-trivy: true
     #     scan-type: fs
     #     severity: CRITICAL,HIGH,MEDIUM
     #     format: sarif
-    #     output: trivy-results.sarif
-    # # https://github.com/codeql-action/upload-sarif/tags
-    # - name: Upload Trivy scan results to GitHub Security
+    #     output: trivy-results-fs.sarif
+    #
+    # - name: Upload security scan results
     #   uses: github/codeql-action/upload-sarif@v4
     #   with:
-    #     sarif_file: trivy-results.sarif
-    #     category: filesystem-vulnerabilities
+    #     sarif_file: trivy-results-*.sarif
 
-      - name: Set up CMake
+      # ========================================
+      # Step 3: Prepare build environment
+      # ========================================
+      # Install essential build tools and dependencies
+      - name: Prepare build environment
         run: |
           apt update
-          apt install --yes wget
+          apt install --yes \
+            wget \
+            python3.13 \
+            python3.13-dev \
+            libpython3.13-dev
+
+      # ========================================
+      # Step 4: Install CMake
+      # ========================================
+      - name: Install CMake v4.2.3
+        run: |
           wget -c https://github.com/Kitware/CMake/releases/download/v4.2.3/cmake-4.2.3-linux-x86_64.tar.gz -O - | tar -C /opt -xz
           ln -s /opt/cmake-4.2.3-linux-x86_64/bin/cmake /usr/local/bin/cmake
-      - name: Set up Infer
+
+      # ========================================
+      # Step 6: Static code analysis with Infer
+      # ========================================
+      # Runs Infer static analyzer to detect potential bugs, memory leaks, and code issues
+      # Results are output in SARIF format for reviewdog integration
+      - name: Analyze code with Infer and post results
+        if: always()
+        uses: jreese/infer-action@v1
+        with:
+          build-command: |
+            . /opt/intel/oneapi/setvars.sh
+            export PATH=/usr/local/bin:${PATH}
+            cmake \
+              -G "Unix Makefiles" \
+              -D CMAKE_C_COMPILER=clang \
+              -D CMAKE_C_COMPILER_AR=llvm-ar \
+              -D CMAKE_CXX_COMPILER=clang++ \
+              -D CMAKE_CXX_COMPILER_AR=llvm-ar \
+              -D CMAKE_UNITY_BUILD=OFF \
+              -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
+              -D CMAKE_LINKER_TYPE=DEFAULT \
+              -D PYBIND11_FINDPYTHON=ON \
+              -D TEMPLATE_SDK_VERSION=${TEMPLATE_SDK_VERSION} \
+              -D USE_PRECOMPILED_HEADERS=OFF \
+              -D BUILD_API_DOCUMENTATION=ON \
+              /src/Code
+            make -j$(nproc)
+          result-format: sarif
+
+      # ========================================
+      # Step 6b: Post Infer results with reviewdog
+      # ========================================
+      # Posts inline comments on pull requests with detected issues
+      # https://github.com/reviewdog/action-reviewdog/tags
+      - name: Comment Infer findings on PR with reviewdog
+        if: always() && github.event_name == 'pull_request'
+        uses: reviewdog/action-reviewdog@v1
+        with:
+          tool_name: Infer
+          reporter: github-pr-review
+          sarif_file: sarif.json
+          fail_on_error: false
+
+
+
+      # ========================================
+      # Step 7: Build project and create package
+      # ========================================
+      # Builds the project using Intel compilers (oneAPI)
+      # Generates Debian package for distribution
+      - name: Build project with Intel oneAPI compilers
         run: |
-          apt update
-          apt install --yes wget
-          wget https://github.com/facebook/infer/releases/download/v1.2.0/infer-linux-x86_64-v1.2.0.tar.xz -O - | tar -C /opt -xJ
-          ln -s /opt/infer-linux-x86_64-v1.2.0/bin/infer /usr/local/bin/infer
-      - name: Install some required packages
-        run: |
-          apt update
-          apt install --yes python3.13
-          apt install --yes python3.13-dev
-          apt install --yes libpython3.13-dev
-      - name: Set up and build the project
-        run: |
-          export PATH=/usr/local/bin${PATH:+:${PATH}}
-          mkdir /build-infer && cd /build-infer
+          mkdir -p /build-package && cd /build-package
+          # Source Intel oneAPI environment
           . /opt/intel/oneapi/setvars.sh
-          cmake \
-            -G "Unix Makefiles" \
-            -D CMAKE_C_COMPILER=clang \
-            -D CMAKE_C_COMPILER_AR=llvm-ar \
-            -D CMAKE_CXX_COMPILER=clang++ \
-            -D CMAKE_CXX_COMPILER_AR=llvm-ar \
-            -D CMAKE_UNITY_BUILD=OFF \
-            -D CMAKE_BUILD_TYPE=Release \
-            -D CMAKE_LINKER_TYPE=DEFAULT \
-            -D PYBIND11_FINDPYTHON=ON \
-            -D TEMPLATE_SDK_VERSION=1.2.0 \
-            -D USE_PRECOMPILED_HEADERS=OFF \
-            -D BUILD_API_DOCUMENTATION=ON \
-            /src/Code
-          infer run -- make -j$(nproc)
-      - name: Set up and build the project
-        run: |
-          export PATH=/usr/local/bin${PATH:+:${PATH}}
-          mkdir /build-package && cd /build-package
-          . /opt/intel/oneapi/setvars.sh
+          export PATH=/usr/local/bin:${PATH}
+          # Configure with Intel compilers for optimized production build
           cmake \
             -G "Unix Makefiles" \
             -D CMAKE_C_COMPILER=icx \
@@ -129,17 +172,25 @@ jobs:
             -D CMAKE_CXX_COMPILER=icpx \
             -D CMAKE_CXX_COMPILER_AR=llvm-ar \
             -D CMAKE_UNITY_BUILD=OFF \
-            -D CMAKE_BUILD_TYPE=Release \
+            -D CMAKE_BUILD_TYPE=${BUILD_TYPE} \
             -D CMAKE_LINKER_TYPE=DEFAULT \
             -D PYBIND11_FINDPYTHON=ON \
-            -D TEMPLATE_SDK_VERSION=1.2.0 \
+            -D TEMPLATE_SDK_VERSION=${TEMPLATE_SDK_VERSION} \
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
             /src/Code
+          # Build and package
           make -j$(nproc)
           make package
+
+      # ========================================
+      # Step 8: Upload build artifacts
+      # ========================================
+      # Archive the generated Debian package for distribution
       # https://github.com/actions/upload-artifact/tags
-      - name: Archive the generated debian package
+      - name: Archive the generated Debian package
         uses: actions/upload-artifact@v6
         with:
-          path: /build-package/Template-SDK_1.2.0.deb
+          name: sdk-package
+          path: /build-package/Template-SDK_*.deb
+          retention-days: 7
