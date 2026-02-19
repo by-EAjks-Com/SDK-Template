@@ -115,9 +115,8 @@ jobs:
             -D TEMPLATE_SDK_VERSION=${{env.TEMPLATE_SDK_VERSION}} \
             -D USE_PRECOMPILED_HEADERS=OFF \
             -D BUILD_API_DOCUMENTATION=ON \
-            -S . \
-            -B /build \
-            ./Code
+            -S ./Code \
+            -B /build
           infer run \
             --sarif \
             --results-dir ./infer-out \
